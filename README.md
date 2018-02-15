@@ -1,5 +1,7 @@
 # Solar-Radiation-Balance-maps
 
+[[https://github.com/ChHarding/Solar-Radiation-Balance-maps/TSR/TSR_monthly_rotates_60.gif|alt=TSR]]
+
 - High resolution Solar Radiation Balance maps from ECMWF 40-year reanalysis model data
 - Folders contain maps (pdfs and gifs), model data and python code to create the maps
 - You are free to use the maps or run the code to generate your own.
