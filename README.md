@@ -18,7 +18,7 @@ data/ECMWF40_moda_Sep1957_Aug2002_SSR_STR_TSR_TTR.nc
 - netcdf file from http://apps.ecmwf.int/datasets/data/era40-moda
 - Monthly means of Daily means, moda, 6, 2.5°, 1957-09-01 to 2002-08-01, Forecast, 40 years reanalysis
 - Variables: Surface net solar radiation, Surface net thermal radiation, Top net solar radiation, Top net thermal radiation  (SSR, STR, TSR, TTR)
-- Radiation Quantities in the ECMWF model and MARS.pdf documents the variables and gives some example maps
+- `Radiation Quantities in the ECMWF model and MARS.pdf` documents the variables and gives some example maps
 
 src/Radiation_maps_from_ECMWF40_data_monthly.py
 
@@ -39,7 +39,8 @@ src/Radiation_maps_from_ECMWF40_data_yearly.py
   - grids (currently 30 degree spacings)
   - colormap/colorramp: currently CMRmap but can be a list for batch processing
   - contours (on/off)
-  - for Radiation_maps_from_ECMWF40_data_yearly.py only one map is created, Radiation_maps_from_ECMWF40_data_yearly.py creates a map for each month
+  - for `Radiation_maps_from_ECMWF40_data_yearly.py` only one map is created
+  - `Radiation_maps_from_ECMWF40_data_monthly.py` creates a map for each month
   - if batch processing is used (e.g. if a list of medians is given), a map is produced for each median, this can be combined with a list of colormaps 
   - monthly maps at different medians can be used as frames to create and animation showing the changes over the year, plus a slow rotation around the globe
   
@@ -101,5 +102,47 @@ varnames = [ "ttr"]
 - monthly maps will contain the month as number (_month=01 to 12)
 - Radiation_maps_from_ECMWF40_data_monthly.py has some provisions for creating lower res jpgs which can be used to create animated gifs
 
+*** header infor for netdf file
+
+```
+netcdf ECMWF40_moda_Sep1957_Aug2002_SSR_STR {
+dimensions:
+	longitude = 144 ;
+	latitude = 73 ;
+	time = UNLIMITED ; // (540 currently)
+variables:
+	float longitude(longitude) ;
+		longitude:units = "degrees_east" ;
+		longitude:long_name = "longitude" ;
+	float latitude(latitude) ;
+		latitude:units = "degrees_north" ;
+		latitude:long_name = "latitude" ;
+	int time(time) ;
+		time:units = "hours since 1900-01-01 00:00:0.0" ;
+		time:long_name = "time" ;
+		time:calendar = "gregorian" ;
+	short ssr(time, latitude, longitude) ;
+		ssr:scale_factor = 125.433476263867 ;
+		ssr:add_offset = 4109953.28326187 ;
+		ssr:_FillValue = -32767s ;
+		ssr:missing_value = -32767s ;
+		ssr:units = "J m**-2" ;
+		ssr:long_name = "Surface net solar radiation" ;
+		ssr:standard_name = "surface_net_downward_shortwave_flux" ;
+	short str(time, latitude, longitude) ;
+		str:scale_factor = 67.7184777135184 ;
+		str:add_offset = -1765199.35923886 ;
+		str:_FillValue = -32767s ;
+		str:missing_value = -32767s ;
+		str:units = "J m**-2" ;
+		str:long_name = "Surface net thermal radiation" ;
+		str:standard_name = "surface_net_upward_longwave_flux" ;
+
+// global attributes:
+		:Conventions = "CF-1.0" ;
+		:history = "2015-09-03 20:49:00 GMT by grib_to_netcdf-1.13.1: grib_to_netcdf /data/data04/scratch/netcdf-atls13-a562cefde8a29a7288fa0b8b7f9413f7-aVlFGs.target -o /data/data04/scratch/netcdf-atls13-a562cefde8a29a7288fa0b8b7f9413f7-L2Furv.nc -utime" ;
+}
+
+```
 
 
