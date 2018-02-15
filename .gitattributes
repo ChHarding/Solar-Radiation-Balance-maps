@@ -1,0 +1,2 @@
+data/ECMWF40_moda_Sep1957_Aug2002_SSR_STR_TSR_TTR.nc filter=lfs diff=lfs merge=lfs -text
+/TTR/TTR_monthly_rotates_30.gif filter=lfs diff=lfs merge=lfs -text
