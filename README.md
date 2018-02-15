@@ -21,7 +21,9 @@ data/ECMWF40_moda_Sep1957_Aug2002_SSR_STR_TSR_TTR.nc
 - Radiation Quantities in the ECMWF model and MARS.pdf documents the variables and gives some example maps
 
 src/Radiation_maps_from_ECMWF40_data_monthly.py
+
 src/Radiation_maps_from_ECMWF40_data_yearly.py
+
 - Python 2 scripts for generating monthly or yearly maps from the Variables
 - reads in the netcdf file and generates a bunch of geotiffs using GDAL so they could be used in a GIS
 - uses numpy to store data in arrays
