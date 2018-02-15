@@ -47,8 +47,11 @@ geotiffs:
 - shapefile for continents (continents.shp) and countries (world30.shp)
   
 SSR: Surface net solar radiation maps (pdfs)
+
 TSR: Top net solar radiation maps (pdfs and animated gif)
+
 TTR: Top net thermal radiation (pdfs and animated gif)
+
 ( Surface net thermal radiation (STR) is in the netcdf file but no maps were created)
 
 ## Creating your own maps
