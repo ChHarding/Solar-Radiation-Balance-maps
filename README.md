@@ -60,8 +60,8 @@ TTR: Top net thermal radiation (pdfs and animated gif)
 or:
 
 - get python 2.7, install numpyt, netCDF4 osgeo (for gdal) matplotlib and Basemap
-- decide if you want yearly or monthly, edit the corresponding python script
-- change this for the variable(s) to plot
+- decide if you want to plot yearly or monthly maps, edit the corresponding python script
+- change this for the variable(s) to plot:
 
 ```
 # variables to plot
@@ -69,7 +69,7 @@ or:
 varnames = [ "ttr"] 
 ```
 
-- change this for the medians to plot:
+- change this for the medians/meridians to plot:
 
 ```
     # plot at median      
@@ -96,7 +96,7 @@ varnames = [ "ttr"]
 - run the code
 - maps will end up in their variable folder (e.g. TTR),
 - map filenames will contain the meridian (_mrd=XXX) and the colormap (_cmap=XXX) used.
-- monthly maps will contain the month as number (01 to 12)
+- monthly maps will contain the month as number (_month=01 to 12)
 - Radiation_maps_from_ECMWF40_data_monthly.py has some provisions for creating lower res jpgs which can be used to create animated gifs
 
 
