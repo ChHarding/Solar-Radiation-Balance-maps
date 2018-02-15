@@ -102,8 +102,7 @@ varnames = [ "ttr"]
 - monthly maps will contain the month as number (_month=01 to 12)
 - Radiation_maps_from_ECMWF40_data_monthly.py has some provisions for creating lower res jpgs which can be used to create animated gifs
 
-*** header infor for netdf file
-
+## Header info for netdf file
 ```
 netcdf ECMWF40_moda_Sep1957_Aug2002_SSR_STR {
 dimensions:
