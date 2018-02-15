@@ -55,7 +55,10 @@ TTR: Top net thermal radiation (pdfs and animated gif)
 ( Surface net thermal radiation (STR) is in the netcdf file but no maps were created)
 
 ## Creating your own maps
-- use ArcGIS with the rasters in geotiffs
+- use ArcGIS with the rasters in the geotiffs folders (load Radiation_data.mxd to get started)
+
+or:
+
 - get python 2.7, install numpyt, netCDF4 osgeo (for gdal) matplotlib and Basemap
 - decide if you want yearly or monthly, edit the corresponding python script
 - change this for the variable(s) to plot
