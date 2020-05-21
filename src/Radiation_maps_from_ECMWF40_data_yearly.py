@@ -63,7 +63,50 @@ def save_as_geotiff(data, filename, geotransform, projection):
     output_raster = None # close buffer
     
     print("Created geotiff", filename)
-    
+
+# helper function to find names of variables in a .nc file 
+# original at http://schubert.atmos.colostate.edu/~cslocum/netcdf_example.html#code
+def ncdump(nc_fid):
+    '''
+    ncdump outputs dimensions, variables and their attribute information.
+    The information is similar to that of NCAR's ncdump utility.
+    ncdump requires a valid instance of Dataset.
+
+    nc_fid : netCDF4.Dataset
+        A netCDF4 dateset object
+
+    '''
+    def print_ncattr(key):
+        try:
+            print("\t\ttype:", repr(nc_fid.variables[key].dtype))
+            for ncattr in nc_fid.variables[key].ncattrs():
+                s = nc_fid.variables[key].getncattr(ncattr)
+                print('\t\t%s:' % ncattr, repr(s))
+        except KeyError:
+            print("\t\tWARNING: %s does not contain variable attributes" % key)
+
+    print("NetCDF Global Attributes:")
+    nc_attrs = nc_fid.ncattrs()
+    for nc_attr in nc_attrs:
+        s = nc_fid.getncattr(nc_attr)
+        s = s[:19] if len(s) > 20 else s
+        print('\t%s:' % nc_attr, repr(s))
+
+    print("NetCDF dimension information:")
+    nc_dims = [dim for dim in nc_fid.dimensions]  # list of nc dimensions
+    for dim in nc_dims:
+        print("\tName:", dim)
+        print("\t\tsize:", len(nc_fid.dimensions[dim]))
+        print_ncattr(dim)
+
+    print("NetCDF variable information:")
+    nc_vars = [var for var in nc_fid.variables]  # list of nc variables
+    for var in nc_vars:
+        if var not in nc_dims:
+            print('\tName:', var)
+            print("\t\tdimensions:", nc_fid.variables[var].dimensions)
+            print("\t\tsize:", nc_fid.variables[var].size)
+            print_ncattr(var)
 
 # ---------------------- MAIN -----------------------------
 start_folder = os.getcwd()
@@ -101,17 +144,22 @@ print("in folder", start_folder)
 		#tsr:standard_name = "toa_net_upward_shortwave_flux" ;
 
 
-# name of netcdf file on disk
-fn = "ECMWF40_moda_Sep1957_Aug2002_SSR_STR_TSR_TTR.nc"  
-
+# name of netcdf file on disk 
+fn = "data/ECMWF40_moda_Sep1957_Aug2002_SSR_STR_TSR_TTR.nc" # I copied it here from the data folder 
+fn = "data/ERA40_SSDR_1957-2002.nc"
 ncattr = {} # dict for storing attributes
-
-# variables to plot
-#varnames = ["ttr", "tsr", "str", "ssr"] 
-varnames = ["ttr"]
 
 print("reading netcdf file", fn)
 nc = netCDF4.Dataset(fn, diskless=False) 
+
+#ncdump(nc) # prints out metadata, in case you need to see the variable names
+
+# variables to plot
+#varnames = ["ttr", "tsr", "str", "ssr"] 
+#varnames = ["ttr"]
+varnames = ["ssrd"]
+
+
 
 # from the nc file, grab some attribute values we will need later (as a dict)
 # the time array, the lat/lon arrays and the value array (as numpy arrays)
@@ -140,7 +188,7 @@ for varname in varnames:
 
     # get data value array (3D)
     vl = np.array(v[varname])
-    print("data values", vl.shape, vl.dtype)  # we will later scale  and offset them  
+    print(varname, "data values", vl.shape, vl.dtype)  # we will later scale  and offset them  
     print("global min %f  mean %f  max %f" % (vl.min(), vl.mean(), vl.max()))
     
     # get lat/lon arrays (1D)
@@ -148,15 +196,15 @@ for varname in varnames:
     #print lat, lat.shape, len(lat)
     lon = np.array(nc.variables["longitude"])        
     
-    if 0:  # <- set to 1 to run the sanity check
+    if 1:  # <- set to 1 to run the sanity check
         # Sanity check: sample a spread of 10 values (vals) via histogram, scale and offset them to
         # first get J/m2, then convert to W/m2 by dividing by the number of seconds per month.
         bins,vals = np.histogram(vl) # 10 bin histogram with bin values in vals
         sc  = ncattr["scale_factor"]
         ofs = ncattr["add_offset"]
         time_in_secs = 730.46 * 3600  # seconds per timestep using an average number of hours per month 
-        print "\nSanity check with histogram-samples values:"
-        print "raw value, *scale+offset (J/m2), /time (W/m2)"
+        print("\nSanity check with histogram-samples values:")
+        print("raw value, *scale+offset (J/m2), /time (W/m2)")
         for v in vals:
             J_val = v * sc + ofs                       # http://home.strw.leidenuniv.nl/~sfinx/netcdf4.html: If both scale_factor and add_offset attributes are present, the data are first scaled before the offset is added.
             print(int(v), J_val, J_val / time_in_secs)  # raw, convert to J, convert J to W
@@ -287,7 +335,7 @@ for varname in varnames:
             m.drawcoastlines(linewidth=1.5, color='Black')
             m.drawcountries(linewidth=0.01, color='#0B0B0B')
             #m.drawrivers(linewidth=1, color='Blue')
-	    #m.drawstates(linewidth=1.5) # US states
+	        #m.drawstates(linewidth=1.5) # US states
  	    
             m.drawparallels(np.arange(-90.,90.,30), labels=[1,1,0,0], linewidth=1) # labels left, right, top or bottom of the plot
             m.drawmeridians(np.arange(0.,360.,30), labels=[0,0,0,1], linewidth=1)
@@ -352,7 +400,6 @@ for varname in varnames:
 	    
 
 print("done")
-sys.exit()
 
 
 
