@@ -6,16 +6,16 @@
 
 # Ch: Apr. 2020: converted to Python 3 
 
-import netCDF4
-import os, sys
 import datetime
+import os
+import sys
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt  # matplotlib state machine interface
+import netCDF4
 import numpy as np
-from osgeo import gdal
-from osgeo import gdal_array
-from osgeo import osr
-import matplotlib.pyplot as plt # matplotlib state machine interface
-import matplotlib as mpl 
 from mpl_toolkits.basemap import Basemap, addcyclic
+from osgeo import gdal, gdal_array, osr
 
 
 # helper function: get date based on number of hours since Jan.1, 1900 (the 0 for this netcdf file)
@@ -196,7 +196,7 @@ for varname in varnames:
     #print lat, lat.shape, len(lat)
     lon = np.array(nc.variables["longitude"])        
     
-    if 1:  # <- set to 1 to run the sanity check
+    if 0:  # <- set to 1 to run the sanity check
         # Sanity check: sample a spread of 10 values (vals) via histogram, scale and offset them to
         # first get J/m2, then convert to W/m2 by dividing by the number of seconds per month.
         bins,vals = np.histogram(vl) # 10 bin histogram with bin values in vals
@@ -267,7 +267,7 @@ for varname in varnames:
     
     fn = varname + "_ann_mean.tif" # name of geotiff file
     fn = "geotiffs" + os.sep + fn # put all in geotiffs folder
-    save_as_geotiff(mean, fn, geotransform, None)
+    #save_as_geotiff(mean, fn, geotransform, None)
     #continue # in case we don't want pdfs to be made
     
     
@@ -323,17 +323,25 @@ for varname in varnames:
             m = Basemap(
                 #llcrnrlon, llcrnrlat, ucrnrlon, urcrnrlat, 
                 resolution='c', # c,l,i,h,f 
-	        #area_thresh = 1000,
+	            #area_thresh = 1000,
                 #projection='robin', # robinson projection
                 #projection='moll',
                 #projection='kav7',
-                #projection='cyl',
+                projection='cyl',
                 #projection='hammer',
-                #lon_0=med,    # sets the median for some projections         
+                lon_0=med,    # sets the median for some projections         
                 ) 
 
-            m.drawcoastlines(linewidth=1.5, color='Black')
-            m.drawcountries(linewidth=0.01, color='#0B0B0B')
+            m.drawcoastlines(linewidth=1.5, 
+                            #color='Black'
+                            color='grey',
+                            #color="#080808",
+                            )
+            m.fillcontinents(color='grey',lake_color='grey', alpha=0.3)
+            m.drawcountries(linewidth=0.5, 
+                            color='grey',
+                            #color="#080808",
+                            )
             #m.drawrivers(linewidth=1, color='Blue')
 	        #m.drawstates(linewidth=1.5) # US states
  	    
@@ -343,8 +351,7 @@ for varname in varnames:
             # draw equator
             elo = [-180, 180]; ela = [0, 0]
             ex,ey = m(elo, ela) # project lat/lon to x/y         
-            m.plot(ex, ey, 'k', linewidth=3)            
-    
+            #m.plot(ex, ey, 'k', linewidth=3)   
 
             # draw data (2-D array) as colored cells
             pcm = m.pcolormesh(lon,lat,
@@ -358,7 +365,6 @@ for varname in varnames:
             cbar = m.colorbar(pcm,location='bottom',pad="10%", ticks=cb_ticks)
             cbar.set_label('W / m**2')    
             
-            
             # contour plot
             intv = 40 # stepsize for intervals
             if varname == "ttr" or varname == "str": intv = 20
@@ -368,15 +374,15 @@ for varname in varnames:
             cs = m.contour(x,y,mean,
                        intervals,
                        latlon=True,
-                       linewidth=0.75,
-                       colors='#080808', 
-                       alpha=0.7,              
+                       linewidth=0.3,
+                       colors=[(0.2, 0.2, 0.2)],  # dark grey
+                       #alpha=0.5,              
                        )
             plt.clabel(cs,  # the basemap (m) can't do contour labels (?) so I use the global plt object instead
-	               inline=True, 
-                       #inline_spacing=-3, # sometime needed as gaps around numbers get too large
-                       fontsize=9, 
-	               fmt='%d') # format of numbers shows as labels 
+	                    inline=True, 
+                        inline_spacing=-8, # sometime needed as gaps around numbers get too large
+                        fontsize=10, 
+	                    fmt='%d') # format of numbers shows as labels 
             cbar.add_lines(cs) # makes vertival lines at the contour interval numbers inside the color bar
             
             title_str = "Annual (1957 - 2002) mean of " + ncattr["long_name"]
@@ -392,7 +398,7 @@ for varname in varnames:
                         
             # assemble file name for plt
             outfilename  = varname + "_mrd=" + str(med) + "_cmap="+cmap.name  + ".pdf"
-            plt.savefig(outfilename, dpi=600)
+            plt.savefig(outfilename, dpi=300)
             
             plt.show() # show plot in matplotlib viewer
             print("wrote", outfilename)
