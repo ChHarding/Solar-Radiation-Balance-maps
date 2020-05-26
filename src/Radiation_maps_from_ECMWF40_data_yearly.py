@@ -145,19 +145,20 @@ print("in folder", start_folder)
 
 
 # name of netcdf file on disk 
+print(os.listdir("data"))
 fn = "data/ECMWF40_moda_Sep1957_Aug2002_SSR_STR_TSR_TTR.nc" # I copied it here from the data folder 
-fn = "data/ERA40_SSDR_1957-2002.nc"
+fn = "data/ERA40_ssdr_lsp_cp_u10_v10_1957-2002.nc"
 ncattr = {} # dict for storing attributes
 
 print("reading netcdf file", fn)
 nc = netCDF4.Dataset(fn, diskless=False) 
 
-#ncdump(nc) # prints out metadata, in case you need to see the variable names
+ncdump(nc) # prints out metadata, in case you need to see the variable names
 
 # variables to plot
 #varnames = ["ttr", "tsr", "str", "ssr"] 
 #varnames = ["ttr"]
-varnames = ["ssrd"]
+varnames = ["lsp","cp"]
 
 
 
