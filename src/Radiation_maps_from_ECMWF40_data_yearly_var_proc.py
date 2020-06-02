@@ -143,17 +143,21 @@ print("in folder", start_folder)
 		#tsr:long_name = "Top net solar radiation" ;
 		#tsr:standard_name = "toa_net_upward_shortwave_flux" ;
 
+# note for ERAint lpc and cp: values are already unpacked, so scale and offset are meaningless and
+# misleading!
+
 
 # name of netcdf file on disk 
 print(os.listdir("data"))
 #fn = "data/ECMWF40_moda_Sep1957_Aug2002_SSR_STR_TSR_TTR.nc" # I copied it here from the data folder 
-fn = "data/ERA40_ssdr_lsp_cp_u10_v10_1957-2002.nc"
+#fn = r"C:\tmp\ERAint_79_19_LSP_CP_unpacked.nc"
+fn = "data/ERAint_79_19_LSP_CP.nc"
 ncattr = {} # dict for storing attributes
 
 print("reading netcdf file", fn)
 nc = netCDF4.Dataset(fn, diskless=False) 
 
-ncdump(nc) # prints out metadata, in case you need to see the variable names
+#ncdump(nc) # prints out metadata, in case you need to see the variable names
 
 # variables to plot
 #varnames = ["ttr", "tsr", "str", "ssr"] 
@@ -191,11 +195,25 @@ def get_mean(varname, nc, save_as_geotiff=False, folder="geotiffs"):
     print()
 
     # get data value array (3D)
-    vl = np.array(v[varname]).astype(np.int16)
-    print(varname, "data values", vl.shape, vl.dtype)  # we will later scale  and offset them  
+    vl = np.array(v[varname])
+    print(varname, "data values", vl.shape, vl.dtype, vl.min(), vl.max())  # we will later scale  and offset them  
     
-    
-   
+    mean = vl.mean(axis=0) 
+    print(" min %f  mean %f  max %f" % (vl.min(), vl.mean(), vl.max()))
+    print("mean"); b,v = np.histogram(mean);print(b);print(v.round(2))
+
+    # make histograms - this helped me to determine that the data was already unpacked
+    '''
+    import seaborn as sns
+    sns.distplot(mean.flatten(), kde=False, bins=100,
+                 hist_kws={"histtype": "step", "linewidth": 1,"alpha": 1, "color": "g"})
+
+    import matplotlib.pyplot as plt
+    plt.show()
+    print()
+    #std = vl.std(axis=0)
+    #print("std"); b,v = np.histogram(std);print(b);print(v)
+    '''
     
     # for my vars, no conversion is needed, so I'm commenting it out ...
     '''
@@ -231,15 +249,17 @@ def get_mean(varname, nc, save_as_geotiff=False, folder="geotiffs"):
     
     # get the mean along then time axis
     print("global min %f  mean %f  max %f" % (vl.min(), vl.mean(), vl.max())) # mean of converted 3D array
-    '''
+  
     sc  = ncattr["scale_factor"]
     ofs = ncattr["add_offset"]
 
+    proc_vl = vl * sc + ofs
+    print(proc_vl.min(), proc_vl.max())
     
     # b/c of the scale+offset issue we can't simply take the mean with mean()
     # but have to convert each slice first
     for i,curr_slice in enumerate(vl):
-        print(curr_slice)
+        print(curr_slice.min(), curr_slice.mean(), curr_slice.max())
         curr_slice = (curr_slice * sc + ofs) 
         print(curr_slice.min(), curr_slice.mean(), curr_slice.max())
 
@@ -249,6 +269,8 @@ def get_mean(varname, nc, save_as_geotiff=False, folder="geotiffs"):
     #std = vl.std(axis=0)
     #print("std"); b,v = np.histogram(std);print(b);print(v)
     
+    '''
+
     #
     # Export as geotiff using GDAL
     #
@@ -280,20 +302,25 @@ for varname in varnames:
 # get first var
 mean =  mean_list[0]
 
-# if we only have more than 1 var, do soem math
+# if we only have more than 1 var, do some math
 if len(mean_list) > 1:
     # do math with means
 
-    # CH here, I'm averaging the  2 vars as per Mike's request
-    mean =  mean_list[0]
-    mean += mean_list[1]
-    mean /= 2
+    # CH here, I'm adding the  2 vars as per Mike's request
+    mean =  mean_list[0] + mean_list[1]
 
     # calculate yearly and in mm
-    mean *= 12 * 1000
+    mean *= 30 * 12 * 1000
 
     long_name = "Total rainfall mm/year"
-    print("final: min %f  mean %f  max %f" % (mean.min(), mean.mean(), mean.max()))
+    print("min %f  mean %f  max %f" % (mean.min(), mean.mean(), mean.max()))
+
+    # just for vis, log the mean
+    mean = np.log(mean)
+    print("log(): min %f  mean %f  max %f" % (mean.min(), mean.mean(), mean.max()))
+
+
+
 
 # get lat/lon arrays (1D)
 lat = np.array(nc.variables["latitude"])
@@ -390,31 +417,35 @@ for med in medians:
                             alpha = 1.0,
                             shading="gouraud" 
                             )
-        cb_ticks = range(-500,500,20) # tick marks on color bar
-        cbar = m.colorbar(pcm,location='bottom',pad="10%", ticks=cb_ticks)
-        cbar.set_label('W / m**2')    
+        cb_ticks = np.arange(0, 10, 0.5) # range(-500,500,20) # tick marks on color bar
+        cbar = m.colorbar(pcm, location='bottom', pad="10%", ticks=cb_ticks)
+        #cbar.set_label('W / m**2')  
+        cbar.set_label('log(mm / year)')   
         
         # contour plot
         intv = 40 # stepsize for intervals
         if varname == "ttr" or varname == "str": intv = 20
-        intervals = range(-500,500,intv)
+        intervals = np.arange(0, 10, 0.5)
         
         #mpl.rcParams['contour.negative_linestyle'] = 'solid' # makes negtive contours solid, not dashed
         cs = m.contour(x,y,mean,
                     intervals,
                     latlon=True,
-                    linewidth=0.3,
-                    colors=[(0.2, 0.2, 0.2)],  # dark grey
-                    #alpha=0.5,              
+                    linewidths=0.7,
+                    colors="black",  # dark grey
+                    alpha=0.6,              
                     )
+        
+        
         plt.clabel(cs,  # the basemap (m) can't do contour labels (?) so I use the global plt object instead
                     inline=True, 
-                    inline_spacing=-8, # sometime needed as gaps around numbers get too large
-                    fontsize=10, 
-                    fmt='%d') # format of numbers shows as labels 
+                    inline_spacing=-5, # sometime needed as gaps around numbers get too large
+                    fontsize=8, 
+                    fmt='%.1f') # format of numbers shows as labels 
+    
         cbar.add_lines(cs) # makes vertival lines at the contour interval numbers inside the color bar
         
-        title_str = "Annual (1957 - 2002) mean of " + long_name
+        title_str = "Annual (1979 - 2019) mean of " + long_name
         plt.title(title_str, fontsize=18)    
         
         # put plot on a specific page size
@@ -426,8 +457,8 @@ for med in medians:
         fig.tight_layout(pad=3.0, w_pad=0.4, h_pad=0.4)
                     
         # assemble file name for plt
-        outfilename  = varname + "_mrd=" + str(med) + "_cmap="+cmap.name  + ".pdf"
-        plt.savefig(outfilename, dpi=300)
+        outfilename  = "total_precip" + "_mrd=" + str(med) + "_cmap="+cmap.name  + ".pdf"
+        plt.savefig(outfilename, dpi=150)
         
         plt.show() # show plot in matplotlib viewer
         print("wrote", outfilename)
