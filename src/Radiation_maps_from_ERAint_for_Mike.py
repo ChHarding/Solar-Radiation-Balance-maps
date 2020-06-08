@@ -151,7 +151,7 @@ print("in folder", start_folder)
 print(os.listdir("data"))
 #fn = "data/ECMWF40_moda_Sep1957_Aug2002_SSR_STR_TSR_TTR.nc" # I copied it here from the data folder 
 #fn = r"C:\tmp\ERAint_79_19_LSP_CP_unpacked.nc"
-fn = "data/ERAint_79_19_LSP_CP.nc"
+fn = "data/ERAint_79_19_totprecip_SurfSolRadDwd.nc"
 ncattr = {} # dict for storing attributes
 
 print("reading netcdf file", fn)
@@ -161,8 +161,8 @@ nc = netCDF4.Dataset(fn, diskless=False)
 
 # variables to plot
 #varnames = ["ttr", "tsr", "str", "ssr"] 
-#varnames = ["ssdr"]
-varnames = ["lsp", "cp"]
+#varnames = ["ssdr"] # Surface solar radiation downwards
+varname = "tp" # total precip 
 
 
 def get_mean(varname, nc, save_as_geotiff=False, folder="geotiffs"):
@@ -292,34 +292,17 @@ def get_mean(varname, nc, save_as_geotiff=False, folder="geotiffs"):
         save_as_geotiff(mean, fn, geotransform, None)
 
     return mean
-    
-# get a list of means
-mean_list = []
-for varname in varnames:
-    m = get_mean(varname, nc, save_as_geotiff=False, folder="geotiffs")
-    mean_list.append(m)
 
-# get first var
-mean =  mean_list[0]
+#
+# MAIN
+#
 
-# if we only have more than 1 var, do some math
-if len(mean_list) > 1:
-    # do math with means
+# get mean
+mean = get_mean(varname, nc, save_as_geotiff=False, folder="geotiffs")
+mean *= 30 * 12 * 1000
+print("min %f  mean %f  max %f" % (mean.min(), mean.mean(), mean.max()))
 
-    # CH here, I'm adding the  2 vars as per Mike's request
-    mean =  mean_list[0] + mean_list[1]
-
-    # calculate yearly and in mm
-    mean *= 30 * 12 * 1000
-
-    long_name = "Total rainfall mm/year"
-    print("min %f  mean %f  max %f" % (mean.min(), mean.mean(), mean.max()))
-
-    # just for vis, log the mean
-    mean = np.log(mean)
-    print("log(): min %f  mean %f  max %f" % (mean.min(), mean.mean(), mean.max()))
-
-
+long_name = "Total rainfall mm/year"
 
 
 # get lat/lon arrays (1D)
@@ -355,13 +338,13 @@ x, y = np.meshgrid(lon, lat)  # makes 2D arrays from 1D lat and 1D lon
 
 # plot at median      
 #medians = range(-90,181,90) # must be -180 to +180
-medians = [90]
+medians = [-90]
 for med in medians:        
     
     # colormap(s) used for pcolormesh 
     # https://jakevdp.github.io/blog/2014/10/16/how-bad-is-your-colormap/
     #cmaps  = [plt.cm.nipy_spectral, plt.cm.CMRmap]
-    cmaps  = [plt.cm.CMRmap]
+    cmaps  = [plt.cm.CMRmap_r]
     """
                 plt.cm.gist_ncar,
                 plt.cm.gist_rainbow,
@@ -410,22 +393,25 @@ for med in medians:
         #m.plot(ex, ey, 'k', linewidth=3)   
 
         # draw data (2-D array) as colored cells
+        import matplotlib.colors as colors
         pcm = m.pcolormesh(lon,lat,
                             mean, 
                             latlon=True, 
                             cmap=cmap, 
+                             norm=colors.LogNorm(vmin=15, vmax=30000),
+                            #norm=colors.PowerNorm(gamma=0.37),
                             alpha = 1.0,
                             shading="gouraud" 
                             )
         cb_ticks = np.arange(0, 10, 0.5) # range(-500,500,20) # tick marks on color bar
         cbar = m.colorbar(pcm, location='bottom', pad="10%", ticks=cb_ticks)
         #cbar.set_label('W / m**2')  
-        cbar.set_label('log(mm / year)')   
+        cbar.set_label('mm / year')   
         
         # contour plot
-        intv = 40 # stepsize for intervals
-        if varname == "ttr" or varname == "str": intv = 20
-        intervals = np.arange(0, 10, 0.5)
+        #intv = 40 # stepsize for intervals
+        #if varname == "ttr" or varname == "str": intv = 20
+        intervals = (25, 100, 200, 300, 400, 500, 750, 1000, 1500, 2500, 5000, 7500, 10000)
         
         #mpl.rcParams['contour.negative_linestyle'] = 'solid' # makes negtive contours solid, not dashed
         cs = m.contour(x,y,mean,
@@ -436,13 +422,12 @@ for med in medians:
                     alpha=0.6,              
                     )
         
-        
         plt.clabel(cs,  # the basemap (m) can't do contour labels (?) so I use the global plt object instead
                     inline=True, 
                     inline_spacing=-5, # sometime needed as gaps around numbers get too large
                     fontsize=8, 
-                    fmt='%.1f') # format of numbers shows as labels 
-    
+                    fmt='%d') # format of numbers shows as labels 
+        
         cbar.add_lines(cs) # makes vertival lines at the contour interval numbers inside the color bar
         
         title_str = "Annual (1979 - 2019) mean of " + long_name
